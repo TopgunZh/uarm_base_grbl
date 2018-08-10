@@ -105,8 +105,15 @@ float calculate_current_angle(enum angle_channel_e channel){
 
 
 static void read_angle_reference_param(void){
+	uint8_t angle_addr_flag = eeprom_get_char(EEPROM_ANGLE_REFER_FLAG);
+
 	int8_t read_size = sizeof(struct refer_value_t);
-	unsigned int read_addr = EEPROM_ADDR_ANGLE_REFER;
+	unsigned int read_addr = 0;
+	if( angle_addr_flag == 0xBB ){
+		read_addr = EEPROM_ADDR_ANGLE_REFER;	
+	}else{
+		read_addr = EEPROM_OLD_ADDR_ANGLE_REFER;
+	}
 	
 	char *p = (char *)(&reference);
 	for( ; read_size > 0; read_size-- ){
@@ -125,6 +132,9 @@ static void write_angle_reference_param(void){
 	for( ; write_size > 0; write_size-- ){
 		eeprom_put_char( write_addr++, *(p++) );
 	}
+  
+	eeprom_put_char( EEPROM_ANGLE_REFER_FLAG, 0xBB );
+	
 	read_angle_reference_param();
 	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML);		// <! calculate init angle
 	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);

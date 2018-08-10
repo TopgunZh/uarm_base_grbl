@@ -695,12 +695,12 @@ static void uarm_cmd_m2400(uint8_t param){	// <! set work mode
 						uarm.param.high_offset 	= DEFAULT_ROUND_PEN_HEIGHT;
 						uarm.param.front_offset = DEFAULT_ROUND_PEN_FRONT;		
 		break;	
-//		case 7: 
-//						end_effector_deinit();	
-//						uarm.param.work_mode = WORK_MODE_TEST;
-//						uarm.param.high_offset 	= DEFAULT_TEST_HEIGHT;
-//						uarm.param.front_offset = DEFAULT_TEST_FRONT;				
-//		break;
+		case 7: 
+						end_effector_deinit();	
+						uarm.param.work_mode = WORK_MODE_TEST;
+						uarm.param.high_offset 	= DEFAULT_TEST_HEIGHT;
+						uarm.param.front_offset = DEFAULT_TEST_FRONT;				
+		break;
 	}
 
 	save_sys_param();
@@ -999,22 +999,26 @@ static void uarm_cmd_p2205(void){
 
 
 void uarm_cmd_p2206(uint8_t param){
-	float angle_l = 0, angle_r = 0, angle_b = 0;
-	char l_str[20] = {0}, r_str[20] = {0}, b_str[20] = {0};
+	float angle_l = 0, angle_r = 0, angle_b = 0, angle_e = 0;
+	char l_str[20] = {0}, r_str[20] = {0}, b_str[20] = {0} , e_str[20] = {0};
 	get_current_angle( sys.position[X_AXIS], sys.position[Y_AXIS], sys.position[Z_AXIS],
 										 &angle_l, &angle_r, &angle_b );
 	float x = 0, y = 0, z = 0;
 	angle_b += 90;
+	angle_e = end_effector_get_angle();
 	dtostrf( angle_l, 5, 4, l_str );
 	dtostrf( angle_r, 5, 4, r_str );
 	dtostrf( angle_b, 5, 4, b_str );
+	dtostrf( angle_e, 5, 4, e_str );
 
 	switch( param ){
-		case 0:			sprintf( tail_report_str, " %s", l_str);
+		case 0:			sprintf( tail_report_str, " %s", b_str);
 			break;
-		case 1:			sprintf( tail_report_str, " %s", r_str);
+		case 1:			sprintf( tail_report_str, " %s", l_str);
 			break;
-		case 2:			sprintf( tail_report_str, " %s", b_str);
+		case 2:			sprintf( tail_report_str, " %s", r_str);
+			break;
+		case 3:			sprintf( tail_report_str, " %s", e_str);				
 			break;
 	}
 }
@@ -1127,7 +1131,7 @@ enum uarm_protocol_e uarm_execute_p_cmd(uint16_t cmd, char *line, uint8_t *char_
 							return UARM_CMD_OK;
 			break;
 		case 2206:
-							if( (line[0]=='N') && (line[1]>='0'&&line[1]<='2') ){
+							if( (line[0]=='N') && (line[1]>='0'&&line[1]<='3') ){
 								uarm_cmd_p2206(line[1]-'0');
 								return UARM_CMD_OK;
 							}else{ return UARM_CMD_ERROR; }							

@@ -63,7 +63,7 @@ void protocol_main_loop()
   // ------------------------------------------------------------
   
   // Print welcome message   
-  report_init_message();
+//  report_init_message();
 
   // Check for and report alarm state after a reset, error, or an initial power up.
   if (sys.state == STATE_ALARM) {
@@ -89,13 +89,6 @@ void protocol_main_loop()
 	uint8_t line_remain = 0;
 	uint8_t line_num = 0;
 	uint8_t line_execute_p = 0;
-/*	static bool position_origin_flag = true;
-	static bool end_angle_origin_flag = true;
-
-	if( uarm.param.work_mode == WORK_MODE_STEPER ){
-		position_origin_flag = false;
-		end_angle_origin_flag = false;
-	}*/
 	
   for (;;) {
 

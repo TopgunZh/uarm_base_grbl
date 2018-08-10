@@ -10,7 +10,11 @@
 
 // The Atmega2560 has 4KB EEPROM.
 //#define EEPROM_ADDR_ANGLE_REFER		 	3072U
-#define EEPROM_ADDR_ANGLE_REFER		 	820U
+
+#define EEPROM_ADDR_ANGLE_REFER		 			820U
+#define EEPROM_OLD_ADDR_ANGLE_REFER		 	800U
+#define EEPROM_ANGLE_REFER_FLAG					818U
+
 
 #define EEPROM_ADDR_PARAM 	 				3200U				// refer to v3.2.0 firmware
 #define EEPROM_MODE_ADDR						900U

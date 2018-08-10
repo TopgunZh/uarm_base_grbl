@@ -30,8 +30,9 @@ void uarm_swift_init(void){
 	PORTG |= (1<<3);
 	uarm.motor_state_bits = 0x0F;
 	end_effector_get_origin();
-	uart_printf( "soft ver : %s\n" , SOFTWARE_VERSION );
-	uart_printf( "api ver : %s\n", API_VERSION );
+	uart_printf( "soft ver : %s\r\n" , SOFTWARE_VERSION );
+	uart_printf( "api ver : %s\r\n", API_VERSION );
+	uart_printf( "mode : %d\r\n", uarm.param.work_mode );
 	printString( "@1\n" );
 }
 
