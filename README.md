@@ -1,5 +1,5 @@
-## Update Summary for v4.1.7
+## Update Summary for v4.2.1
 
-* Fix old uarn pro cann't read refer value bug
-* Fix P2242 P2243 bug
+* Fix G2201 bug. "G0" CMD change to "G1" CMD. 
+
 
