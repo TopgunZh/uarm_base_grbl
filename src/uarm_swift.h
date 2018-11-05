@@ -7,7 +7,7 @@
 
 #define DEVICE_NAME						"SwiftPro"
 #define HARDWARE_VERSION			hardware_version
-#define SOFTWARE_VERSION			"V4.1.7"
+#define SOFTWARE_VERSION			"V4.2.1"
 #define API_VERSION						"V4.0.2"
 #define BLE_UUID							"FFFFFFFF"
 

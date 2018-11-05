@@ -32,7 +32,7 @@ void uarm_swift_init(void){
 	end_effector_get_origin();
 	uart_printf( "soft ver : %s\r\n" , SOFTWARE_VERSION );
 	uart_printf( "api ver : %s\r\n", API_VERSION );
-	uart_printf( "mode : %d\r\n", uarm.param.work_mode );
+	uart_printf( "work mode : %d\r\n", uarm.param.work_mode );
 	printString( "@1\n" );
 }
 

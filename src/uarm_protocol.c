@@ -252,7 +252,7 @@ static enum uarm_protocol_e uarm_cmd_g2201(char *payload){						// <! polar coor
 		target[Y_AXIS] = length * sin(angle);
 		target[Z_AXIS] = high; 		
 		
-		return mc_line( 0, target, speed, false );
+		return mc_line( 1, target, speed, false );
 	}
 }
 
