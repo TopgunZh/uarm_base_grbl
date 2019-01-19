@@ -1,5 +1,5 @@
 # uarm_base_grbl
 
-* Fix motion planning bug, limit can not reach point.
+* Fix stepper effector motion return bug;
 
-* Add uArm2500 Product
+* Fix stepper effector motion can be broken bug.
