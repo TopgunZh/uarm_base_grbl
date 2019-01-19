@@ -138,7 +138,10 @@ void parse_cmd_line(void){
 	if( !uarm.gcode_delay_flag && syn_pack_remain ){ 	// <! delay cmd done && syn queue is not empty
 
 		static uint8_t syn_parse_sp = 0;
+		if( uarm.effect_ldie == false ){ return; }
+	
 		syn_queue[syn_parse_sp].parse_result = gc_execute_line(syn_queue[syn_parse_sp].line);
+		
 		add_result_to_report( syn_queue[syn_parse_sp].parse_result, syn_queue[syn_parse_sp].report_str );
 		
 		syn_queue[syn_parse_sp].line_parse_done = true;
@@ -159,7 +162,7 @@ void report_parse_result(void){
 		asyn_pack.line_parse_done = false;
 	}
 
-	if( sys.state == STATE_IDLE ){																//<! report syn result
+	if( sys.state==STATE_IDLE && uarm.effect_ldie==true ){			//<! report syn result
 		static uint8_t syn_report_sp = 0;
 		for( int i=0; i < PACK_MAX_SIZE; i++ ){
 			if( syn_queue[syn_report_sp].line_parse_done == true ){

@@ -124,6 +124,7 @@ struct uarm_state_t {
 	volatile bool run_flag;
 
 	bool effect_origin_check;
+	bool effect_ldie;
 	bool power_state;
 	bool motor_position_check;
 	

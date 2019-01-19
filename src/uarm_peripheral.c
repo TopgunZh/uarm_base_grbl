@@ -48,6 +48,7 @@ void step_creater(void){
 	}else{
 		time4_stop();
 		step_count = 0;
+		uarm.effect_ldie = true;
 		//DB_PRINT_STR( "time4 stop\r\n" );
 	}
 }
@@ -58,6 +59,13 @@ static void steper_init(void){
 
 	PORTH |= (1<<5);	// <! DIR clockwise
 }
+
+static void steper_deinit(void){
+	step_count = 0;
+	time4_stop();
+	uarm.effect_origin_check = false;
+}
+
 
 static void steper_set_angle(float angle){
 	#if defined(UARM_2500)
@@ -81,11 +89,6 @@ static void steper_set_angle(float angle){
 	#endif
 }
 
-static void steper_deinit(void){
-	step_count = 0;
-	time4_stop();
-	uarm.effect_origin_check = false;
-}
 
 static float steper_get_angle(void){
 	return steper_current_angle;
@@ -112,8 +115,10 @@ void end_effector_set_angle(float angle){
 			PORTH |= (1<<5);	// <! clockwise
 		}
 		steper_set_angle(fabs(offset_angle));
+		uarm.effect_ldie = false;
 	}else{
 		servo_set_angle(angle);
+		uarm.effect_ldie = true;
 	}
 }
 
