@@ -137,7 +137,9 @@ float end_effector_get_angle(void){
 }
 
 void end_effector_get_origin(void){
+	uarm.effect_ldie = true;
 	if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT || uarm.param.work_mode==WORK_MODE_STEPER_STANDARD ){
+		uarm.effect_ldie = false;
 		steper_current_angle = 0;
 		DDRK &= ~(1<<5);
 		PORTK |= (1<<5);
