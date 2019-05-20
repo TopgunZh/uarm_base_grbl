@@ -68,6 +68,15 @@
 	
 	float x= target[X_AXIS], y= target[Y_AXIS], z = target[Z_AXIS];
 
+
+//		char x_str[20], y_str[20], z_str[20];
+//		dtostrf( target[X_AXIS], 5, 4, x_str );
+//		dtostrf( target[Y_AXIS], 5, 4, y_str );
+//		dtostrf( target[Z_AXIS], 5, 4, z_str );
+//	
+//		DB_PRINT_STR( "coord: %s, %s, %s\r\n", x_str, y_str, z_str );
+
+
 	coord_effect2arm( &x, &y, &z );                               // calculate the arm current coord
 	coord_to_angle( x, y, z,																			
 									&final_angle[X_AXIS], &final_angle[Y_AXIS], &final_angle[Z_AXIS] ); // calculate final angle
@@ -149,6 +158,9 @@
 		uarm.coord_x = final_coord[X_AXIS];
 		uarm.coord_y = final_coord[Y_AXIS];
 		uarm.coord_z = final_coord[Z_AXIS];
+
+
+		
 	
 		coord_to_step( final_coord[X_AXIS], final_coord[Y_AXIS], final_coord[Z_AXIS],
 									 &final_step[X_AXIS], &final_step[Y_AXIS], &final_step[Z_AXIS] );
@@ -163,6 +175,16 @@
 		uarm.target_step[X_AXIS] = final_step[X_AXIS];
 		uarm.target_step[Y_AXIS] = final_step[Y_AXIS];
 		uarm.target_step[Z_AXIS] = final_step[Z_AXIS];
+
+
+//		char l_str[20], r_str[20], b_str[20];
+//		dtostrf( final_step[X_AXIS], 5, 4, l_str );
+//		dtostrf( final_step[Y_AXIS], 5, 4, r_str );
+//		dtostrf( final_step[Z_AXIS], 5, 4, b_str );
+//		
+//		DB_PRINT_STR( "final_angle: %s, %s, %s\r\n", l_str, r_str, b_str );
+
+//		DB_PRINT_STR( "%d %d %d\r\n", final_step[X_AXIS], final_step[Y_AXIS], final_step[Z_AXIS] );
 		
 		final_step[X_AXIS] = (final_step[X_AXIS]) / (settings.steps_per_mm[X_AXIS]);
 		final_step[Y_AXIS] = (final_step[Y_AXIS]) / (settings.steps_per_mm[Y_AXIS]); 
@@ -170,7 +192,7 @@
 		
 		plan_buffer_line(final_step, feed_rate, invert_feed_rate);
 		
-		//DB_PRINT_STR( "%d %d %d\r\n", final_step[X_AXIS], final_step[Y_AXIS], final_step[Z_AXIS] );
+		
 		uarm.run_flag = true;
 		
 	}

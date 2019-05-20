@@ -254,7 +254,7 @@ static enum uarm_protocol_e uarm_cmd_g2201(char *payload){						// <! polar coor
 		target[X_AXIS] = length * cos(angle); 
 		target[Y_AXIS] = length * sin(angle);
 		target[Z_AXIS] = high; 		
-		
+
 		return mc_line( 1, target, speed, false );
 	}
 }
@@ -296,7 +296,7 @@ static enum uarm_protocol_e uarm_cmd_g2202(char *payload){						// <! move motor
 				return mc_line( 0, target, speed, false );				
 				break;
 			case 3:
-				end_effector_set_angle(angle);
+				end_effector_set_angle(angle, speed);
 				return UARM_CMD_OK;
 				break;
 		}
@@ -407,9 +407,6 @@ enum uarm_protocol_e uarm_execute_g_cmd(uint16_t cmd, char *line, uint8_t *char_
  */
  
 static void uarm_cmd_m17(void){				// <! lock all motor 
-/*	ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
-	ARMR_STEPPERS_DISABLE_PORT |= ARMR_STEPPERS_DISABLE_MASK;
-	BASE_STEPPERS_DISABLE_PORT |= BASE_STEPPERS_DISABLE_MASK;*/
 	
 	if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
 		ARML_STEPPERS_DISABLE_PORT |= ARML_STEPPERS_DISABLE_MASK;
@@ -424,23 +421,7 @@ static void uarm_cmd_m17(void){				// <! lock all motor
 	end_effector_init();
 	uarm.motor_state_bits = 0x0F;
 
-	memset(&sys, 0, sizeof(system_t));	// Clear all system variables
-	plan_sync_position();
-	gc_sync_position();
-	
-	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML);
-	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
-	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
-	
-	uarm.target_step[X_AXIS] = sys.position[X_AXIS];
-	uarm.target_step[Y_AXIS] = sys.position[Y_AXIS];
-	uarm.target_step[Z_AXIS] = sys.position[Z_AXIS];
-
-	angle_to_coord( uarm.init_arml_angle, uarm.init_armr_angle, uarm.init_base_angle-90,
-									&(uarm.coord_x), &(uarm.coord_y), &(uarm.coord_z) );
-
-
-//	angle_sensor_init();
+	update_motor_position();
 }
 
 static bool uarm_cmd_m204(char *payload){
@@ -461,9 +442,6 @@ static bool uarm_cmd_m204(char *payload){
 }
 
 static void uarm_cmd_m2019(void){				// <! unlock all motor
-/*	ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
-	ARMR_STEPPERS_DISABLE_PORT &= (~ARMR_STEPPERS_DISABLE_MASK);
-	BASE_STEPPERS_DISABLE_PORT &= (~BASE_STEPPERS_DISABLE_MASK);*/
 
 	if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)){
 		ARML_STEPPERS_DISABLE_PORT &= (~ARML_STEPPERS_DISABLE_MASK);
@@ -536,6 +514,7 @@ static void uarm_cmd_m2201(uint8_t param){		// <! lock n motor
 			uarm.motor_state_bits |= 0x08;
 			break;
 	}
+	update_motor_position();
 }
 
 static void uarm_cmd_m2202(uint8_t param){		// <! unlock n motor
@@ -618,12 +597,69 @@ static void uarm_cmd_m2215(void){
 	read_hardware_version();
 }
 
+static bool uarm_cmd_m2220(char *payload){     // <! coord to angle
+	char x_str[20] = {0}, y_str[20] = {0}, z_str[20] = {0};
+	float x = 0, y = 0, z = 0;
+	int rtn = 0;
+	
+	if( rtn = sscanf(payload, "X%[0-9-+.]Y%[0-9-+.]Z%[0-9-+.]", x_str, y_str, z_str ) < 3 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		if( !read_float(x_str, NULL, &x) ){ return false; }
+		if( !read_float(y_str, NULL, &y) ){ return false; }
+		if( !read_float(z_str, NULL, &z) ){ return false; }
+
+		float angle_b = 0, angle_l = 0, angle_r = 0;
+		char b_str[20] = {0}, l_str[20] = {0}, r_str[20] = {0};
+		coord_effect2arm( &x, &y, &z );
+		coord_to_angle( x, y, z, &angle_l, &angle_r, &angle_b );
+		angle_b += 90;
+
+		dtostrf( angle_l, 5, 4, l_str );
+		dtostrf( angle_r, 5, 4, r_str );
+		dtostrf( angle_b, 5, 4, b_str );
+
+		sprintf( tail_report_str, " B%s L%s R%s\n", b_str, l_str, r_str );
+		return true;
+	}
+}
+
+static bool uarm_cmd_m2221(char *payload){    // <! angle to coord
+	char b_str[20] = {0}, l_str[20] = {0}, r_str[20] = {0};
+	float angle_b = 0, angle_l = 0, angle_r = 0;
+	int rtn = 0;
+	
+	if( rtn = sscanf(payload, "B%[0-9-+.]L%[0-9-+.]R%[0-9-+.]", b_str, l_str, r_str ) < 3 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		if( !read_float(b_str, NULL, &angle_b) ){ return false; }
+		if( !read_float(l_str, NULL, &angle_l) ){ return false; }
+		if( !read_float(r_str, NULL, &angle_r) ){ return false; }
+
+		float x = 0, y = 0, z = 0;
+		char x_str[20] = {0}, y_str[20] = {0}, z_str[20] = {0};
+		angle_b -= 90;
+		angle_to_coord( angle_l, angle_r, angle_b, &x, &y, &z );
+		coord_arm2effect( &x, &y, &z );
+		
+		dtostrf( x, 5, 4, x_str );
+		dtostrf( y, 5, 4, y_str );
+		dtostrf( z, 5, 4, z_str );
+		
+		sprintf( tail_report_str, " X%s Y%s Z%s\n", x_str, y_str, z_str );
+		return true;
+	}
+}
+
+
 static bool uarm_cmd_m2222(char *payload){	// <! check coord if legal
 	float x=0, y=0, z=0;
 	char x_str[20] = {0}, y_str[20] = {0}, z_str[20] = {0};
 	int mode = 0xFF;
 	uint8_t rtn = 0;
-	if( rtn = sscanf(payload, "X%[0-9-+.]Y%[0-9-+.]Z%[0-9-+.]P%d", x_str, y_str, z_str, &mode) < 3 ){
+	if( rtn = sscanf(payload, "X%[0-9-+.]Y%[0-9-+.]Z%[0-9-+.]P%d", x_str, y_str, z_str, &mode) < 4 ){
 		DB_PRINT_STR( "sscanf %d\r\n", rtn );
 		return false;
 	}else{
@@ -911,12 +947,18 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 								uarm_cmd_m2215();
 								return UARM_CMD_OK;
 		case 2220:
-			//DB_PRINT_STR( "M2220\r\n" );
-								return UARM_CMD_OK;
+								if( uarm_cmd_m2220(line) == true ){
+									return UARM_CMD_OK;
+								}else{
+									return UARM_CMD_ERROR;
+								}		
 			break;
 		case 2221:
-			//DB_PRINT_STR( "M2221\r\n" );
-								return UARM_CMD_OK;
+								if( uarm_cmd_m2221(line) == true ){
+									return UARM_CMD_OK;
+								}else{
+									return UARM_CMD_ERROR;
+								} 	
 			break;
 		case 2222:
 								if( uarm_cmd_m2222(line) == true ){
@@ -926,7 +968,6 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 								}		
 			break;	
 		case 2231:
-								//DB_PRINT_STR( "M2231\r\n" );
 								if( (line[0]=='V') && (line[1]>='0'&&line[1]<='1') ){
 									uarm_cmd_m2231( line[1]-'0' );
 									return UARM_CMD_OK;
@@ -1071,24 +1112,27 @@ static void uarm_cmd_p2205(void){
 void uarm_cmd_p2206(uint8_t param){
 	float angle_l = 0, angle_r = 0, angle_b = 0, angle_e = 0;
 	char l_str[20] = {0}, r_str[20] = {0}, b_str[20] = {0} , e_str[20] = {0};
-	get_current_angle( sys.position[X_AXIS], sys.position[Y_AXIS], sys.position[Z_AXIS],
-										 &angle_l, &angle_r, &angle_b );
-	float x = 0, y = 0, z = 0;
-	angle_b += 90;
-	angle_e = end_effector_get_angle();
-	dtostrf( angle_l, 5, 4, l_str );
-	dtostrf( angle_r, 5, 4, r_str );
-	dtostrf( angle_b, 5, 4, b_str );
-	dtostrf( angle_e, 5, 4, e_str );
 
 	switch( param ){
-		case 0:			sprintf( tail_report_str, " %s\n", b_str);
+		case 0:			
+								angle_b = calculate_current_angle(CHANNEL_BASE);
+								dtostrf( angle_b, 5, 4, b_str );
+								sprintf( tail_report_str, " V%s\n", b_str);
 			break;
-		case 1:			sprintf( tail_report_str, " %s\n", l_str);
+		case 1:			
+								angle_l = calculate_current_angle(CHANNEL_ARML);
+								dtostrf( angle_l, 5, 4, l_str );
+								sprintf( tail_report_str, " V%s\n", l_str);
 			break;
-		case 2:			sprintf( tail_report_str, " %s\n", r_str);
+		case 2:			
+								angle_r = calculate_current_angle(CHANNEL_ARMR);
+								dtostrf( angle_r, 5, 4, r_str );
+								sprintf( tail_report_str, " V%s\n", r_str);
 			break;
-		case 3:			sprintf( tail_report_str, " %s\n", e_str);				
+		case 3:			
+								angle_e = end_effector_get_angle();
+								dtostrf( angle_e, 5, 4, e_str );
+								sprintf( tail_report_str, " V%s\n", e_str);				
 			break;
 	}
 }

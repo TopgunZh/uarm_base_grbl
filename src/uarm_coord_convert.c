@@ -27,7 +27,7 @@
 	#define ARM_A2		 (ARM_A*ARM_A)// A^2
 	#define ARM_B2		 (ARM_B*ARM_B)// B^2
 	#define ARM_A2B2	 (ARM_A2+ARM_B2)// A^2+B^2
-	#define Z_BASIC 	 (189.0)
+	#define Z_BASIC 	 (171.45)
 	#define length_center_to_origin 	(0.0)
 	#define gearbox_ratio 		(100.0)
 	#define micro_steps 			(4.0)

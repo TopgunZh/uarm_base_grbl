@@ -1,5 +1,9 @@
 # uarm_base_grbl
 
-* Fix stepper effector motion return bug;
+* Add M2220 M2221 cmd
 
-* Fix stepper effector motion can be broken bug.
+* Fix M2201 bug
+
+* P2206 analog query servo angle
+
+* Fix G2204 bug

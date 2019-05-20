@@ -43,8 +43,8 @@ enum uarm_work_mode_e {
 };
 
 #if defined(UARM_2500)
-	#define DEFAULT_NORMAL_HEIGHT 	74.55
-	#define DEFAULT_NORMAL_FRONT		56.65
+	#define DEFAULT_NORMAL_HEIGHT 	13.00
+	#define DEFAULT_NORMAL_FRONT		44.82
 
 	#define DEFAULT_LASER_HEIGHT		51.04
 	#define DEFAULT_LASER_FRONT 		64.4
@@ -52,7 +52,7 @@ enum uarm_work_mode_e {
 	#define DEFAULT_3DPRINT_HEIGHT	74.43
 	#define DEFAULT_3DPRINT_FRONT 	56.5
 
-	#define DEFAULT_PEN_HEIGHT			43
+	#define DEFAULT_PEN_HEIGHT			43.00
 	#define DEFAULT_PEN_FRONT 			69.5	
 
 	#define DEFAULT_STEP_FLAT_HEIGHT		39

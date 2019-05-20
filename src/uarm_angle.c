@@ -240,9 +240,9 @@ void angle_sensor_init(void){
 	angle_iic_init();
 	read_angle_reference_param();	// <! read reference param from eeprom 
 
-	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML); 	// <! calculate init angle
-	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
-	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
+//	uarm.init_arml_angle = calculate_current_angle(CHANNEL_ARML); 	// <! calculate init angle
+//	uarm.init_armr_angle = calculate_current_angle(CHANNEL_ARMR);
+//	uarm.init_base_angle = calculate_current_angle(CHANNEL_BASE);
 	
 }
 

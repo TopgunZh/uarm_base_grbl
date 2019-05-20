@@ -21,6 +21,8 @@
 
 #include "grbl.h"
 #include "uarm_protocol.h"
+#include "uarm_common.h"
+
 
 // NOTE: Max line number is defined by the g-code standard to be 99999. It seems to be an
 // arbitrary value, and some GUIs may require more. So we increased it based on a max safe
@@ -362,9 +364,9 @@ uint8_t gc_execute_line(char *line)
           case 'R': word_bit = WORD_R; gc_block.values.r = value; break;
           case 'S': word_bit = WORD_S; gc_block.values.s = value; break;
           case 'T': word_bit = WORD_T; break; // gc.values.t = int_value;
-          case 'X': word_bit = WORD_X; gc_block.values.xyz[X_AXIS] = value; axis_words |= (1<<X_AXIS); break;
-          case 'Y': word_bit = WORD_Y; gc_block.values.xyz[Y_AXIS] = value; axis_words |= (1<<Y_AXIS); break;
-          case 'Z': word_bit = WORD_Z; gc_block.values.xyz[Z_AXIS] = value; axis_words |= (1<<Z_AXIS); break;
+          case 'X': word_bit = WORD_X; gc_block.values.xyz[X_AXIS] = value; axis_words |= (1<<X_AXIS);  break;
+          case 'Y': word_bit = WORD_Y; gc_block.values.xyz[Y_AXIS] = value; axis_words |= (1<<Y_AXIS);  break;
+          case 'Z': word_bit = WORD_Z; gc_block.values.xyz[Z_AXIS] = value; axis_words |= (1<<Z_AXIS); 	break;
           default: FAIL(STATUS_GCODE_UNSUPPORTED_COMMAND);
         } 
         
@@ -506,7 +508,7 @@ uint8_t gc_execute_line(char *line)
   uint8_t idx;
   if (gc_block.modal.units == UNITS_MODE_INCHES) {
     for (idx=0; idx<N_AXIS; idx++) { // Axes indices are consistent, so loop may be used.
-      if (bit_istrue(axis_words,bit(idx)) ) {
+      if (bit_istrue(axis_words,bit(idx)) ) {				
         gc_block.values.xyz[idx] *= MM_PER_INCH;
       }
     }
@@ -610,9 +612,17 @@ uint8_t gc_execute_line(char *line)
       // NOTE: Tool offsets may be appended to these conversions when/if this feature is added.
       if (axis_command != AXIS_COMMAND_TOOL_LENGTH_OFFSET ) { // TLO block any axis command.
         if (axis_words) {
+					float coord[3];
+					coord[X_AXIS] = uarm.coord_x;
+					coord[Y_AXIS] = uarm.coord_y;
+					coord[Z_AXIS] = uarm.coord_z;
+
+					coord_arm2effect( &coord[X_AXIS], &coord[Y_AXIS], &coord[Z_AXIS] );
+				
           for (idx=0; idx<N_AXIS; idx++) { // Axes indices are consistent, so loop may be used to save flash space.
             if ( bit_isfalse(axis_words,bit(idx)) ) {
-              gc_block.values.xyz[idx] = gc_state.position[idx]; // No axis word in block. Keep same axis position.
+              //gc_block.values.xyz[idx] = gc_state.position[idx]; // No axis word in block. Keep same axis position.
+							gc_block.values.xyz[idx] = coord[idx];
             } else {
               // Update specified value according to distance mode or ignore if absolute override is active.
               // NOTE: G53 is never active with G28/30 since they are in the same modal group.
