@@ -49,7 +49,7 @@ void step_creater(void){
 		time4_stop();
 		step_count = 0;
 		uarm.effect_ldie = true;
-		//DB_PRINT_STR( "time4 stop\r\n" );
+//		DB_PRINT_STR( "time4 stop\r\n" );
 	}
 }
 
@@ -108,6 +108,8 @@ void end_effector_set_angle(float angle){
 
 	if( uarm.param.work_mode==WORK_MODE_STEPER_FLAT || uarm.param.work_mode==WORK_MODE_STEPER_STANDARD ){
 		float offset_angle = angle - steper_current_angle;
+		if( offset_angle == 0 ){ return; }
+	
 		steper_current_angle = angle;
 		if( offset_angle > 0 ){
 			PORTH &= ~(1<<5);	// <!  anticlockwise
@@ -188,10 +190,12 @@ static void beep_creater_callback(void){
   if( cnt++ > beep_duration ){
     cnt = 0;
     time2_stop();
+		uarm.beep_ldie = true;
   }	
 }
 
 void beep_tone(unsigned long duration, double frequency){
+	uarm.beep_ldie = false;
   DDRL  |= 1<<5;  
   PORTL &= ~(1<<5); 
 	beep_duration = duration * 2;
@@ -401,6 +405,19 @@ void save_sys_param(void){
 	}	
 }
 
+
+void write_sn_num(void){
+	int8_t write_size = 0;
+	unsigned int write_addr = 0;
+	char *p = NULL;
+
+	p = bt_mac_addr;
+	write_size = 12;
+	write_addr = EEPROM_BT_MAC_ADDR;	
+	for( ; write_size > 0; write_size-- ){
+		eeprom_put_char( write_addr++, *(p++) );
+	}		
+}
 
 void read_hardware_version(void){
 #define HARD_MASK	 ( 1<<6 | 1<<5 | 1<<4 | 1<<3 )

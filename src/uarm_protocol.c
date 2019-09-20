@@ -139,7 +139,10 @@ void parse_cmd_line(void){
 	if( !uarm.gcode_delay_flag && syn_pack_remain ){ 	// <! delay cmd done && syn queue is not empty
 
 		static uint8_t syn_parse_sp = 0;
-		if( uarm.effect_ldie == false ){ return; }
+		if( uarm.effect_ldie == false || uarm.beep_ldie == false ){ 
+//			DB_PRINT_STR( "no ldie, %d, %d\r\n", uarm.effect_ldie, uarm.beep_ldie );
+			return; 
+		}
 	
 		syn_queue[syn_parse_sp].parse_result = gc_execute_line(syn_queue[syn_parse_sp].line);
 		
@@ -163,7 +166,7 @@ void report_parse_result(void){
 		asyn_pack.line_parse_done = false;
 	}
 
-	if( sys.state==STATE_IDLE && uarm.effect_ldie==true ){			//<! report syn result
+	if( sys.state==STATE_IDLE && uarm.effect_ldie==true && uarm.beep_ldie==true ){			//<! report syn result
 		static uint8_t syn_report_sp = 0;
 		for( int i=0; i < PACK_MAX_SIZE; i++ ){
 			if( syn_queue[syn_report_sp].line_parse_done == true ){
@@ -305,7 +308,6 @@ static enum uarm_protocol_e uarm_cmd_g2202(char *payload){						// <! move motor
 	}		
 }
 
-
 static enum uarm_protocol_e uarm_cmd_g2204(char *payload){					// <! coord offset 
 	uint8_t rtn = 0;
 	char x_str[10], y_str[10], z_str[10], f_str[10];
@@ -369,6 +371,27 @@ static  enum uarm_protocol_e uarm_cmd_g2205(char *payload){		// <! polar coord o
 	}	
 }
 
+static enum uarm_protocol_e uarm_cmd_g2206(char *payload){
+	char angle_b_str[20], angle_l_str[20], angle_r_str[20] ,speed_str[20];
+	float angle_b, angle_l, angle_r, speed;
+	uint8_t rtn = 0;
+	if( rtn = sscanf(payload, "B%[0-9-+.]L%[0-9-+.]R%[0-9-+.]F%[0-9-+.]", angle_b_str, angle_l_str, angle_r_str, speed_str ) < 4 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return UARM_CMD_ERROR;
+	}else{
+		if( !read_float(angle_b_str, NULL, &angle_b) ){ return false; }
+		if( !read_float(angle_l_str, NULL, &angle_l) ){ return false; }
+		if( !read_float(angle_r_str, NULL, &angle_r) ){ return false; }
+		if( !read_float(speed_str, NULL, &speed) ){ return false; }
+		angle_b -= 90;
+
+		float target[3] = {0};
+		angle_to_coord( angle_l, angle_r, angle_b, &target[X_AXIS], &target[Y_AXIS], &target[Z_AXIS] );				
+		coord_arm2effect( &target[X_AXIS], &target[Y_AXIS], &target[Z_AXIS] );
+		
+		return mc_line( 0, target, speed, false );	
+	}
+}
 
 
 enum uarm_protocol_e uarm_execute_g_cmd(uint16_t cmd, char *line, uint8_t *char_counter){
@@ -391,6 +414,9 @@ enum uarm_protocol_e uarm_execute_g_cmd(uint16_t cmd, char *line, uint8_t *char_
 			break;
 		case 2205:
 								return uarm_cmd_g2205(line);
+			break;
+		case 2206:
+								return uarm_cmd_g2206(line);
 			break;
 	}
 
@@ -418,7 +444,6 @@ static void uarm_cmd_s1000(uint8_t param){
 }
 
 static void uarm_cmd_s1100(void){
-	bit_true_atomic(sys_rt_exec_state, EXEC_FEED_HOLD);
 	mc_reset();
 }
 
@@ -648,6 +673,19 @@ static void uarm_cmd_m2203(uint8_t param){	// <! get motor status
 				sprintf( tail_report_str, " V0\n" );	
 			}			
 			break;
+	}
+}
+
+static bool uarm_cmd_m2205(char *payload){
+	int rtn;
+	char sn_num[13];
+	if( rtn = sscanf(payload, "VUB%[0-9.]", sn_num ) < 1 ){
+		DB_PRINT_STR( "sscanf %d\r\n", rtn );
+		return false;
+	}else{
+		memcpy( bt_mac_addr, sn_num, 12 );
+		write_sn_num();
+		return true;
 	}
 }
 
@@ -1007,6 +1045,13 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 									uarm_cmd_m2203( line[1]-'0' );
 									return UARM_CMD_OK;
 								}else{ return UARM_CMD_ERROR; }
+			break;
+		case 2205:
+								if( uarm_cmd_m2205(line) == true ){
+									return UARM_CMD_OK;
+								}else{
+									return UARM_CMD_ERROR;
+								} 		
 			break;
 		case 2210:
 								if( uarm_cmd_m2210(line) == true ){

@@ -23,6 +23,8 @@ void cycle_report_stop(void);
 
 void read_sys_param(void);
 void save_sys_param(void);
+void write_sn_num(void);
+
 void cycle_report_coord(void);
 void read_hardware_version(void);
 

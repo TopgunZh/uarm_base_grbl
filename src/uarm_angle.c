@@ -67,11 +67,11 @@ float calculate_current_angle(enum angle_channel_e channel){
 	float angle = 0.0;
 	int i = 0;
 	uint16_t head_data = 0, tail_data = 0;
+	int long refer_value = 0;  
 	
 	switch( channel ){
 		case CHANNEL_ARML:;
 			#if defined(UARM_2500)
-//				offset = (int long)angle_reg_value - (int long)reference.param_l;
 				for( i=0; i < sizeof(left_calibra_angle_map)/sizeof(uint16_t)-1; i++ ){
 					head_data = left_calibra_angle_map[i];
 					tail_data = left_calibra_angle_map[i+1];
@@ -83,12 +83,19 @@ float calculate_current_angle(enum angle_channel_e channel){
 				angle = ( ( 115.2 - i*1.8 - (angle_reg_value-head_data)/4096.0*360.0) + (115.2-(i+1)*1.8+(tail_data-angle_reg_value)/4096.0*360.0) ) / 2;
 				return angle;				
 			#else
-				offset = (int long)reference.param_l - (int long)angle_reg_value;
+				refer_value = (int long)reference.param_l;
+
+				if( refer_value-(int long)angle_reg_value > 2048 ){
+					refer_value -= 4096;
+				}else if( refer_value-(int long)angle_reg_value < -2048 ){
+					refer_value += 4096;
+				}
+				
+				offset = refer_value - (int long)angle_reg_value;
 			#endif
 			break;
 		case CHANNEL_ARMR:	
 			#if defined(UARM_2500)
-//				offset = (int long)angle_reg_value - (int long)reference.param_r;
 				for( i=0; i < sizeof(right_calibra_angle_map)/sizeof(uint16_t)-1; i++ ){
 					head_data = right_calibra_angle_map[i];
 					tail_data = right_calibra_angle_map[i+1];
@@ -100,12 +107,19 @@ float calculate_current_angle(enum angle_channel_e channel){
 				angle = ( ((head_data-angle_reg_value)/4096.0*360.0 + i*1.8 - 1.8) + ((i+1)*1.8 - 1.8 - (angle_reg_value-tail_data)/4096.0*360.0) ) / 2;
 				return angle;							
 			#else
-				offset = (int long)reference.param_r - (int long)angle_reg_value;
+				refer_value = (int long)reference.param_r;
+
+				if( refer_value-(int long)angle_reg_value > 2048 ){
+					refer_value -= 4096;
+				}else if( refer_value-(int long)angle_reg_value < -2048 ){
+					refer_value += 4096;
+				}
+				
+				offset = refer_value - (int long)angle_reg_value;
 			#endif	
 			break;
 		case CHANNEL_BASE:;		
 			#if defined(UARM_2500)
-//				offset = (int long)angle_reg_value - (int long)reference.param_b;
 				for( i=0; i < sizeof(base_calibra_angle_map)/sizeof(uint16_t)-1; i++ ){
 					head_data = base_calibra_angle_map[i];
 					tail_data = base_calibra_angle_map[i+1];
@@ -117,7 +131,15 @@ float calculate_current_angle(enum angle_channel_e channel){
 				angle = ( ((head_data-angle_reg_value)/4096.0*360.0 + i*1.8) + ((i+1)*1.8 - (angle_reg_value-tail_data)/4096.0*360.0) ) / 2;
 				return angle;
 			#else
-				offset = (int long)reference.param_b - (int long)angle_reg_value;
+				refer_value = (int long)reference.param_b;
+			
+				if( refer_value-(int long)angle_reg_value > 2048 ){
+					refer_value -= 4096;
+				}else if( refer_value-(int long)angle_reg_value < -2048 ){
+					refer_value += 4096;
+				}
+				
+				offset = refer_value - (int long)angle_reg_value;
 			#endif
 			break;
 	}
@@ -125,12 +147,12 @@ float calculate_current_angle(enum angle_channel_e channel){
 	
 	angle = get_point_b_angle(channel) - offset * 360.0 / 4096;
 
-	if(angle > 360){
-		angle -= 360;
-	}
-	if(angle < 0){
-		angle += 360;
-	}
+//	if(angle > 360){
+//		angle -= 360;
+//	}
+//	if(angle < 0){
+//		angle += 360;
+//	}
 
 	return angle;
 }
@@ -336,7 +358,8 @@ bool atuo_angle_calibra(void){
 
 
 	write_angle_calibra_map();
-	DB_PRINT_STR( "auto angle calibra done\r\n" );
+	update_motor_position();
+//	DB_PRINT_STR( "auto angle calibra done\r\n" );
 
 	return true;
 }

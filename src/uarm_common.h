@@ -15,7 +15,7 @@
 //#define EEPROM_ADDR_ANGLE_REFER		 	3072U
 
 //#define UARM_MINI
-#define UARM_2500
+//#define UARM_2500
 
 
 #define EEPROM_ADDR_ANGLE_REFER		 				820U
@@ -127,6 +127,7 @@ struct uarm_state_t {
 
 	bool effect_origin_check;
 	bool effect_ldie;
+	bool beep_ldie;
 	bool power_state;
 	bool motor_position_check;
 	
